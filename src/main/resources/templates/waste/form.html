@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Log Waste Entry | PlasticAudit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand"><span class="nav-icon">♻️</span><span class="nav-title">PlasticAudit</span><span
+                class="nav-sdg">SDG 12 &amp; 14</span></div>
+        <ul class="nav-links">
+            <li><a th:href="@{/dashboard}">Dashboard</a></li>
+            <li><a th:href="@{/waste/list}" class="active">Waste Entries</a></li>
+            <li><a th:href="@{/reports}">Reports</a></li>
+            <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/industries}">Admin</a></li>
+        </ul>
+        <div class="nav-user">
+            <span class="user-badge" sec:authorize="hasRole('ADMIN')">ADMIN</span>
+            <span class="user-badge industry-badge" sec:authorize="hasRole('INDUSTRY')">INDUSTRY</span>
+            <span sec:authentication="name"></span>
+            <a th:href="@{/logout}" class="btn-logout">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div th:if="${successMsg}" class="alert alert-success" th:text="${successMsg}"></div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">📝 Log Plastic Waste Entry</h1>
+                <p class="page-subtitle">Record your industry's monthly plastic waste data</p>
+            </div>
+            <a th:href="@{/waste/list}" class="btn btn-secondary">← Back to List</a>
+        </div>
+
+        <div class="form-card">
+            <form th:action="@{/waste/save}" th:object="${wasteEntry}" method="post" id="wasteEntryForm" novalidate>
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                <div class="form-row">
+                    <!-- Industry Selection -->
+                    <div class="form-group">
+                        <label for="industryId">Industry <span class="required">*</span></label>
+                        <select id="industryId" name="industryId" class="form-control" required>
+                            <option value="">-- Select Industry --</option>
+                            <option th:each="ind : ${industries}" th:value="${ind.id}" th:text="${ind.name}"
+                                th:selected="${userIndustryId != null and ind.id == userIndustryId}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Entry Date -->
+                    <div class="form-group">
+                        <label for="entryDate">Entry Date <span class="required">*</span></label>
+                        <input type="date" id="entryDate" th:field="*{entryDate}" class="form-control" required />
+                        <span th:if="${#fields.hasErrors('entryDate')}" class="field-error"
+                            th:errors="*{entryDate}"></span>
+                    </div>
+                </div>
+
+                <div class="form-row three-col">
+                    <!-- Plastic Generated -->
+                    <div class="form-group">
+                        <label for="plasticGeneratedKg">Plastic Generated (kg) <span class="required">*</span></label>
+                        <input type="number" id="plasticGeneratedKg" th:field="*{plasticGeneratedKg}"
+                            class="form-control" step="0.01" min="0" required placeholder="e.g. 5000" />
+                        <span th:if="${#fields.hasErrors('plasticGeneratedKg')}" class="field-error"
+                            th:errors="*{plasticGeneratedKg}"></span>
+                    </div>
+
+                    <!-- Plastic Recycled -->
+                    <div class="form-group">
+                        <label for="plasticRecycledKg">Plastic Recycled (kg) <span class="required">*</span></label>
+                        <input type="number" id="plasticRecycledKg" th:field="*{plasticRecycledKg}" class="form-control"
+                            step="0.01" min="0" required placeholder="e.g. 2000" />
+                        <span th:if="${#fields.hasErrors('plasticRecycledKg')}" class="field-error"
+                            th:errors="*{plasticRecycledKg}"></span>
+                    </div>
+
+                    <!-- Plastic Eliminated -->
+                    <div class="form-group">
+                        <label for="plasticEliminatedKg">Plastic Eliminated (kg) <span class="required">*</span></label>
+                        <input type="number" id="plasticEliminatedKg" th:field="*{plasticEliminatedKg}"
+                            class="form-control" step="0.01" min="0" required placeholder="e.g. 500" />
+                        <span th:if="${#fields.hasErrors('plasticEliminatedKg')}" class="field-error"
+                            th:errors="*{plasticEliminatedKg}"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <!-- Entry Type -->
+                    <div class="form-group">
+                        <label for="entryType">Entry Type</label>
+                        <select id="entryType" th:field="*{entryType}" class="form-control">
+                            <option th:each="type : ${entryTypes}" th:value="${type}" th:text="${type}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Verified -->
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" th:field="*{verified}" />
+                            Mark as Verified
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="form-group">
+                    <label for="notes">Notes / Remarks</label>
+                    <textarea id="notes" th:field="*{notes}" class="form-control" rows="3"
+                        placeholder="Describe the waste collection process, materials, or any remarks..."></textarea>
+                </div>
+
+                <!-- Live Reduction Preview -->
+                <div class="reduction-preview" id="reductionPreview">
+                    <span class="preview-label">Live Reduction Rate Preview:</span>
+                    <span class="preview-value" id="reductionValue">–</span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="saveEntryBtn">💾 Save Entry</button>
+                    <a th:href="@{/waste/list}" class="btn btn-ghost">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+    <footer class="footer">
+        <p>♻️ PlasticAudit — SDG 12 &amp; 14</p>
+    </footer>
+    <script th:src="@{/js/app.js}"></script>
+</body>
+
+</html>

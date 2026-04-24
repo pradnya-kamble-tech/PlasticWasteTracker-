@@ -1,0 +1,41 @@
+# ── Maven ──────────────────────────────────────────────────
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ── IDE ────────────────────────────────────────────────────
+.idea/
+*.iws
+*.iml
+*.ipr
+.classpath
+.project
+.settings/
+.vscode/
+
+# ── Spring Boot ────────────────────────────────────────────
+*.jar
+*.war
+*.ear
+*.class
+
+# ── Logs ───────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Database credentials (NEVER commit these) ─────────────
+# application.properties is committed but WITHOUT real password
+# Create application-local.properties for local overrides
+
+# ── OS ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Environment ────────────────────────────────────────────
+*.env
+.env
+
+# ── Test coverage ──────────────────────────────────────────
+/coverage/
+jacoco.exec

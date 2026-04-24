@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard | PlasticAudit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="nav-icon">♻️</span>
+            <span class="nav-title">PlasticAudit</span>
+            <span class="nav-sdg">SDG 12 &amp; 14</span>
+        </div>
+        <ul class="nav-links">
+            <li><a th:href="@{/dashboard}" class="active">Dashboard</a></li>
+            <li><a th:href="@{/waste/list}">Waste Entries</a></li>
+            <li><a th:href="@{/reports}">Reports</a></li>
+            <li><a th:href="@{/prediction}">🤖 AI Predict</a></li>
+            <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/industries}">Admin</a></li>
+            <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/socket}">🔌 Socket</a></li>
+        </ul>
+        <div class="nav-user">
+            <span class="user-badge" sec:authorize="hasRole('ADMIN')">ADMIN</span>
+            <span class="user-badge industry-badge" sec:authorize="hasRole('INDUSTRY')">INDUSTRY</span>
+            <span class="username" sec:authentication="name">User</span>
+            <a th:href="@{/logout}" class="btn-logout">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Flash Messages -->
+        <div th:if="${successMsg}" class="alert alert-success" th:text="${successMsg}"></div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    <span th:if="${isAdmin}">📊 Regulator Dashboard</span>
+                    <span th:unless="${isAdmin}">🏭 Industry Dashboard</span>
+                </h1>
+                <p class="page-subtitle">Welcome back, <strong th:text="${currentUser}">User</strong></p>
+            </div>
+            <div class="header-actions">
+                <a th:href="@{/waste/new}" class="btn btn-primary">+ Log Waste Entry</a>
+                <a th:href="@{/reports/generate}" class="btn btn-secondary" sec:authorize="hasRole('ADMIN')">
+                    ⚡ Generate Reports
+                </a>
+            </div>
+        </div>
+
+        <!-- ── SDG Metrics Cards ─────────────────────────────────────────────── -->
+        <section class="section">
+            <h2 class="section-title">🌍 SDG Impact Metrics</h2>
+            <div class="metrics-grid">
+                <div class="metric-card generated">
+                    <div class="metric-icon">🏭</div>
+                    <div class="metric-value" th:text="${sdgGenerated + ' kg'}">0 kg</div>
+                    <div class="metric-label">Total Plastic Generated</div>
+                    <div class="metric-sub">SDG 12 baseline</div>
+                </div>
+                <div class="metric-card recycled">
+                    <div class="metric-icon">♻️</div>
+                    <div class="metric-value" th:text="${sdgRecycled + ' kg'}">0 kg</div>
+                    <div class="metric-label">Total Recycled</div>
+                    <div class="metric-sub">SDG 12 recovery</div>
+                </div>
+                <div class="metric-card eliminated">
+                    <div class="metric-icon">🌊</div>
+                    <div class="metric-value" th:text="${sdgEliminated + ' kg'}">0 kg</div>
+                    <div class="metric-label">Total Eliminated</div>
+                    <div class="metric-sub">SDG 14 ocean protection</div>
+                </div>
+                <div class="metric-card reduction">
+                    <div class="metric-icon">📉</div>
+                    <div class="metric-value" th:text="${sdgReductionRate + '%'}">0%</div>
+                    <div class="metric-label">Overall Reduction Rate</div>
+                    <div class="metric-sub">SDG 12 &amp; 14 KPI</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Progress Bar ──────────────────────────────────────────────────── -->
+        <section class="section">
+            <div class="progress-card">
+                <div class="progress-header">
+                    <span>Recycling Ratio (SDG 14 Target: 50%)</span>
+                    <span class="progress-value" th:text="${sdgRecyclingRatio + '%'}">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" th:style="'width: ' + ${sdgRecyclingRatio} + '%;'"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Summary Stats ─────────────────────────────────────────────────── -->
+        <section class="section">
+            <div class="stats-row">
+                <div class="stat-box">
+                    <span class="stat-number" th:text="${totalIndustries}">0</span>
+                    <span class="stat-label">Registered Industries</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" th:text="${totalEntries}">0</span>
+                    <span class="stat-label">Waste Entries Logged</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── AI Prediction Widget ──────────────────────────────────────────── -->
+        <section class="section">
+            <h2 class="section-title">🤖 AI Prediction &amp; Smart Analytics</h2>
+            <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px,1fr));">
+
+                <!-- Admin: link to all industries prediction -->
+                <div class="metric-card" sec:authorize="hasRole('ADMIN')" style="border-left:4px solid #2c5364;">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-label">Waste Trend Forecasting</div>
+                    <div class="metric-sub" style="margin-bottom:1rem;">Predict next month waste &amp; recycling per
+                        industry using linear regression</div>
+                    <a th:href="@{/prediction/select}" class="btn btn-secondary" style="display:inline-block;">View
+                        Predictions →</a>
+                </div>
+
+                <!-- Industry: link directly to their own prediction -->
+                <div class="metric-card" sec:authorize="hasRole('INDUSTRY')" style="border-left:4px solid #27ae60;">
+                    <div class="metric-icon">🤖</div>
+                    <div class="metric-label">My Waste Prediction</div>
+                    <div class="metric-sub" style="margin-bottom:1rem;">See your predicted next-month waste generation,
+                        recycling rate, risk level and smart recommendations</div>
+                    <a th:href="@{/prediction}" class="btn btn-primary" style="display:inline-block;">Open AI Dashboard
+                        →</a>
+                </div>
+
+                <!-- Risk info card -->
+                <div class="metric-card"
+                    style="border-left:4px solid #e74c3c; background:linear-gradient(135deg,#fff5f5,#fff);">
+                    <div class="metric-icon">🚦</div>
+                    <div class="metric-label">Risk Levels Assessed</div>
+                    <div class="metric-sub">
+                        <span
+                            style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:0.78rem;margin-right:4px;">LOW</span>
+                        <span
+                            style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:0.78rem;margin-right:4px;">MEDIUM</span>
+                        <span
+                            style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:10px;font-size:0.78rem;">HIGH</span>
+                        <br /><span style="font-size:0.78rem;color:#aaa;margin-top:0.4rem;display:block;">Based on
+                            recycling rate, growth trend &amp; predicted reduction</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ── Admin: All Industries ─────────────────────────────────────────── -->
+        <section class="section" th:if="${isAdmin and allIndustries != null}">
+            <h2 class="section-title">🏭 Registered Industries</h2>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Industry</th>
+                            <th>Sector</th>
+                            <th>Location</th>
+                            <th>Target (kg/yr)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="ind : ${allIndustries}">
+                            <td><strong th:text="${ind.name}">-</strong></td>
+                            <td th:text="${ind.sector}">-</td>
+                            <td th:text="${ind.location}">-</td>
+                            <td
+                                th:text="${ind.annualPlasticTargetKg != null ? ind.annualPlasticTargetKg + ' kg' : 'Not set'}">
+                                -</td>
+                            <td>
+                                <a th:href="@{/waste/list}" class="btn-sm">View Entries</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ── Industry: My Entries ──────────────────────────────────────────── -->
+        <section class="section" th:unless="${isAdmin}" th:if="${myEntries != null}">
+            <h2 class="section-title">📝 My Recent Waste Entries</h2>
+            <div th:if="${#lists.isEmpty(myEntries)}" class="empty-state">
+                <p>No waste entries yet. <a th:href="@{/waste/new}">Log your first entry →</a></p>
+            </div>
+            <div class="table-wrapper" th:unless="${#lists.isEmpty(myEntries)}">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Generated (kg)</th>
+                            <th>Recycled (kg)</th>
+                            <th>Eliminated (kg)</th>
+                            <th>Reduction %</th>
+                            <th>Verified</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="e : ${myEntries}">
+                            <td th:text="${e.entryDate}">-</td>
+                            <td th:text="${e.plasticGeneratedKg}">0</td>
+                            <td th:text="${e.plasticRecycledKg}">0</td>
+                            <td th:text="${e.plasticEliminatedKg}">0</td>
+                            <td>
+                                <span class="badge badge-reduction"
+                                    th:text="${#numbers.formatDecimal(e.reductionRate, 1, 1) + '%'}">0%</span>
+                            </td>
+                            <td>
+                                <span th:if="${e.verified}" class="badge badge-success">✓ Yes</span>
+                                <span th:unless="${e.verified}" class="badge badge-warn">Pending</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ── SDG Justification ─────────────────────────────────────────────── -->
+        <section class="section">
+            <div class="sdg-justify-card">
+                <h2>🌏 SDG Alignment</h2>
+                <div class="sdg-justify-grid">
+                    <div class="sdg-item">
+                        <span class="sdg-badge-lg sdg12">SDG 12</span>
+                        <p><strong>Responsible Consumption &amp; Production</strong><br />
+                            Industries log and reduce single-use plastic generation, track recycling ratios,
+                            and set annual reduction targets — directly measuring responsible production patterns.</p>
+                    </div>
+                    <div class="sdg-item">
+                        <span class="sdg-badge-lg sdg14">SDG 14</span>
+                        <p><strong>Life Below Water</strong><br />
+                            By quantifying plastic eliminated from waste streams before it reaches waterways,
+                            this system protects marine ecosystems. The recycling ratio KPI directly measures
+                            ocean plastic prevention impact.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>♻️ <strong>PlasticAudit</strong> — UN SDG 12 &amp; 14 | Spring Boot 3.x | Hibernate 6.x</p>
+    </footer>
+
+    <script th:src="@{/js/app.js}"></script>
+</body>
+
+</html>

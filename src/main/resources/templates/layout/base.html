@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="Plastic Waste Audit & Reduction Tracker — SDG 12 & 14"/>
+    <title th:text="${pageTitle != null ? pageTitle + ' | PlasticAudit' : 'PlasticAudit — SDG 12 & 14'}">PlasticAudit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♻️</text></svg>"/>
+</head>
+<body>
+
+<!-- ── Navbar ───────────────────────────────────────────────────────── -->
+<nav class="navbar">
+    <div class="nav-brand">
+        <span class="nav-icon">♻️</span>
+        <span class="nav-title">PlasticAudit</span>
+        <span class="nav-sdg">SDG 12 &amp; 14</span>
+    </div>
+    <ul class="nav-links" sec:authorize="isAuthenticated()">
+        <li><a th:href="@{/dashboard}" th:classappend="${activeMenu == 'dashboard'} ? 'active'">Dashboard</a></li>
+        <li><a th:href="@{/waste/list}" th:classappend="${activeMenu == 'waste'} ? 'active'">Waste Entries</a></li>
+        <li><a th:href="@{/reports}" th:classappend="${activeMenu == 'reports'} ? 'active'">Reports</a></li>
+        <li sec:authorize="hasRole('ADMIN')">
+            <a th:href="@{/admin/industries}" th:classappend="${activeMenu == 'admin'} ? 'active'">Admin</a>
+        </li>
+        <li sec:authorize="hasRole('ADMIN')">
+            <a th:href="@{/admin/socket}" th:classappend="${activeMenu == 'socket'} ? 'active'">🔌 Socket</a>
+        </li>
+    </ul>
+    <div class="nav-user" sec:authorize="isAuthenticated()">
+        <span class="user-badge" sec:authorize="hasRole('ADMIN')">ADMIN</span>
+        <span class="user-badge industry-badge" sec:authorize="hasRole('INDUSTRY')">INDUSTRY</span>
+        <span class="username" sec:authentication="name">User</span>
+        <a th:href="@{/logout}" class="btn-logout">Logout</a>
+    </div>
+</nav>
+
+<!-- ── Flash Messages ──────────────────────────────────────────────── -->
+<div class="container">
+    <div th:if="${successMsg}" class="alert alert-success" th:text="${successMsg}"></div>
+    <div th:if="${errorMsg}"   class="alert alert-error"   th:text="${errorMsg}"></div>
+    <div th:if="${socketResponse}" class="alert alert-info">
+        <strong>Socket Response:</strong>
+        <pre th:text="${socketResponse}"></pre>
+    </div>
+</div>
+
+<!-- ── Page Content ────────────────────────────────────────────────── -->
+<main class="container" th:fragment="content">
+    <!-- Child templates insert here -->
+</main>
+
+<footer class="footer">
+    <p>♻️ <strong>PlasticAudit</strong> — Aligning with <strong>UN SDG 12</strong> (Responsible Consumption) &amp;
+       <strong>SDG 14</strong> (Life Below Water)</p>
+    <p>Built with Spring Boot 3.x | Hibernate 6.x | MySQL | Thymeleaf</p>
+</footer>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

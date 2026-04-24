@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="AI Waste Prediction — PlasticAudit" />
+    <title>AI Prediction | PlasticAudit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <style>
+        /* ── Prediction-specific styles ── */
+        .predict-hero {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            border-radius: 16px;
+            padding: 2rem 2.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .predict-hero-icon {
+            font-size: 3.5rem;
+        }
+
+        .predict-hero h1 {
+            margin: 0;
+            font-size: 1.75rem;
+        }
+
+        .predict-hero p {
+            margin: 0.25rem 0 0;
+            opacity: 0.8;
+            font-size: 0.95rem;
+        }
+
+        .pred-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .pred-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+            border-left: 4px solid #2c5364;
+            transition: transform 0.15s;
+        }
+
+        .pred-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .pred-card.gen {
+            border-color: #e74c3c;
+        }
+
+        .pred-card.rec {
+            border-color: #27ae60;
+        }
+
+        .pred-card.elim {
+            border-color: #2980b9;
+        }
+
+        .pred-card.rate {
+            border-color: #8e44ad;
+        }
+
+        .pred-label {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .pred-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 0.25rem 0;
+        }
+
+        .pred-sub {
+            font-size: 0.78rem;
+            color: #aaa;
+        }
+
+        .risk-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .risk-LOW {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .risk-MEDIUM {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .risk-HIGH {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .trend-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .trend-box {
+            flex: 1;
+            min-width: 180px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            text-align: center;
+        }
+
+        .trend-val {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .trend-val.up {
+            color: #e74c3c;
+        }
+
+        .trend-val.down {
+            color: #27ae60;
+        }
+
+        .trend-val.neutral {
+            color: #555;
+        }
+
+        .trend-lbl {
+            font-size: 0.78rem;
+            color: #888;
+            margin-top: 0.2rem;
+        }
+
+        .recs-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .recs-list li {
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.6rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #2c5364;
+            font-size: 0.9rem;
+        }
+
+        .chart-section {
+            background: #fff;
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+            margin-bottom: 2rem;
+        }
+
+        .chart-section h2 {
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 320px;
+        }
+
+        .hist-table th,
+        .hist-table td {
+            padding: 0.6rem 1rem;
+            font-size: 0.88rem;
+        }
+
+        .insufficient-msg {
+            text-align: center;
+            padding: 3rem;
+            background: #fff3cd;
+            border-radius: 12px;
+            border: 1px solid #ffc107;
+            margin: 2rem 0;
+        }
+
+        .insufficient-msg h2 {
+            color: #856404;
+        }
+
+        .insufficient-msg p {
+            color: #533f03;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand"><span class="nav-icon">♻️</span><span class="nav-title">PlasticAudit</span><span
+                class="nav-sdg">SDG 12 &amp; 14</span></div>
+        <ul class="nav-links">
+            <li><a th:href="@{/dashboard}">Dashboard</a></li>
+            <li><a th:href="@{/waste/list}">Waste Entries</a></li>
+            <li><a th:href="@{/reports}">Reports</a></li>
+            <li><a th:href="@{/prediction}" class="active">🤖 AI Predict</a></li>
+            <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/industries}">Admin</a></li>
+        </ul>
+        <div class="nav-user">
+            <span class="user-badge" sec:authorize="hasRole('ADMIN')">ADMIN</span>
+            <span class="user-badge industry-badge" sec:authorize="hasRole('INDUSTRY')">INDUSTRY</span>
+            <span sec:authentication="name"></span>
+            <a th:href="@{/logout}" class="btn-logout">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <!-- Hero -->
+        <div class="predict-hero">
+            <div class="predict-hero-icon">🤖</div>
+            <div>
+                <h1>AI Waste Prediction — <span th:text="${prediction.industryName}">Industry</span></h1>
+                <p>Linear regression forecast · Growth trend · Risk assessment · Smart recommendations</p>
+            </div>
+            <!-- Admin: switch industry -->
+            <div th:if="${isAdmin and allIndustries != null}" style="margin-left:auto;">
+                <select onchange="location.href='/prediction/'+this.value"
+                    style="padding:0.5rem; border-radius:8px; border:none; font-size:0.9rem;">
+                    <option value="">Switch industry…</option>
+                    <option th:each="ind : ${allIndustries}" th:value="${ind.id}" th:text="${ind.name}"
+                        th:selected="${ind.id == prediction.industryId}"></option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ── Insufficient Data ─────────────────────────────────────────────── -->
+        <div th:unless="${prediction.sufficientData}" class="insufficient-msg">
+            <h2>⚠️ Insufficient Data for Prediction</h2>
+            <p th:text="${prediction.insufficientDataMessage}">Not enough data.</p>
+            <a th:href="@{/waste/new}" class="btn btn-primary" style="margin-top:1rem;">+ Log Waste Entry</a>
+        </div>
+
+        <!-- ── Prediction Cards ──────────────────────────────────────────────── -->
+        <div th:if="${prediction.sufficientData}">
+
+            <section class="section">
+                <h2 class="section-title">📅 Next Month Forecast</h2>
+                <div class="pred-grid">
+                    <div class="pred-card gen">
+                        <div class="pred-label">Predicted Generated</div>
+                        <div class="pred-value"
+                            th:text="${#numbers.formatDecimal(prediction.predictedGenerated,1,2) + ' kg'}">–</div>
+                        <div class="pred-sub">Based on linear regression</div>
+                    </div>
+                    <div class="pred-card rec">
+                        <div class="pred-label">Predicted Recycled</div>
+                        <div class="pred-value"
+                            th:text="${#numbers.formatDecimal(prediction.predictedRecycled,1,2) + ' kg'}">–</div>
+                        <div class="pred-sub">Forecasted recovery</div>
+                    </div>
+                    <div class="pred-card elim">
+                        <div class="pred-label">Predicted Eliminated</div>
+                        <div class="pred-value"
+                            th:text="${#numbers.formatDecimal(prediction.predictedEliminated,1,2) + ' kg'}">–</div>
+                        <div class="pred-sub">Forecasted source reduction</div>
+                    </div>
+                    <div class="pred-card rate">
+                        <div class="pred-label">Predicted Recycling Rate</div>
+                        <div class="pred-value"
+                            th:text="${#numbers.formatDecimal(prediction.predictedRecyclingRate,1,1) + '%'}">–</div>
+                        <div class="pred-sub">Reduction rate: <span
+                                th:text="${#numbers.formatDecimal(prediction.predictedReductionRate,1,1) + '%'}">–</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Risk Level ──────────────────────────────────────────────── -->
+            <section class="section">
+                <h2 class="section-title">🚦 Risk Assessment</h2>
+                <div style="display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap; margin-bottom:1rem;">
+                    <span class="risk-badge" th:classappend="'risk-' + ${prediction.riskLevel}"
+                        th:text="${prediction.riskLevel}">LOW</span>
+                    <span style="color:#555;" th:text="${prediction.riskReason}">–</span>
+                </div>
+            </section>
+
+            <!-- ── Trend Analytics ───────────────────────────────────────────── -->
+            <section class="section">
+                <h2 class="section-title">📈 Trend Analytics</h2>
+                <div class="trend-row">
+                    <div class="trend-box">
+                        <div class="trend-val"
+                            th:classappend="${prediction.growthRatePercent > 5 ? 'up' : (prediction.growthRatePercent < -5 ? 'down' : 'neutral')}"
+                            th:text="${(prediction.growthRatePercent > 0 ? '+' : '') + #numbers.formatDecimal(prediction.growthRatePercent,1,1) + '%'}">
+                            –</div>
+                        <div class="trend-lbl">Waste Growth Rate</div>
+                    </div>
+                    <div class="trend-box">
+                        <div class="trend-val"
+                            th:classappend="${prediction.recyclingEfficiencyTrend >= 0 ? 'down' : 'up'}"
+                            th:text="${(prediction.recyclingEfficiencyTrend > 0 ? '+' : '') + #numbers.formatDecimal(prediction.recyclingEfficiencyTrend,1,1) + '%'}">
+                            –</div>
+                        <div class="trend-lbl">Recycling Rate Trend</div>
+                    </div>
+                    <div class="trend-box">
+                        <div class="trend-val neutral"
+                            th:text="${#numbers.formatDecimal(prediction.averageRecyclingRate,1,1) + '%'}">–</div>
+                        <div class="trend-lbl">Avg Recycling Rate</div>
+                    </div>
+                    <div class="trend-box">
+                        <div class="trend-val neutral"
+                            th:text="${#numbers.formatDecimal(prediction.averageReductionRate,1,1) + '%'}">–</div>
+                        <div class="trend-lbl">Avg Reduction Rate</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Chart ─────────────────────────────────────────────────────── -->
+            <div class="chart-section">
+                <h2>📊 Waste Trend &amp; Prediction (Chart)</h2>
+                <div class="chart-container">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- ── Historical Data Table ─────────────────────────────────────── -->
+            <section class="section">
+                <h2 class="section-title">🗓️ Historical Monthly Data</h2>
+                <div class="table-wrapper">
+                    <table class="data-table hist-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Generated (kg)</th>
+                                <th>Recycled (kg)</th>
+                                <th>Eliminated (kg)</th>
+                                <th>Recycling Rate</th>
+                                <th>Reduction Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="dp : ${prediction.historicalData}">
+                                <td th:text="${dp.monthLabel}">–</td>
+                                <td th:text="${#numbers.formatDecimal(dp.generated,1,2)}">–</td>
+                                <td th:text="${#numbers.formatDecimal(dp.recycled,1,2)}">–</td>
+                                <td th:text="${#numbers.formatDecimal(dp.eliminated,1,2)}">–</td>
+                                <td><span class="badge badge-reduction"
+                                        th:text="${#numbers.formatDecimal(dp.recyclingRate,1,1) + '%'}">–</span></td>
+                                <td><span class="badge badge-reduction"
+                                        th:text="${#numbers.formatDecimal(dp.reductionRate,1,1) + '%'}">–</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ── Recommendations ───────────────────────────────────────────── -->
+            <section class="section">
+                <h2 class="section-title">💡 Smart Recommendations</h2>
+                <ul class="recs-list">
+                    <li th:each="rec : ${prediction.recommendations}" th:text="${rec}">–</li>
+                </ul>
+            </section>
+
+        </div><!-- end sufficientData -->
+
+    </main>
+
+    <footer class="footer">
+        <p>♻️ PlasticAudit — SDG 12 &amp; 14 | AI Prediction Engine</p>
+    </footer>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script th:src="@{/js/app.js}"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        (function () {
+            var labels = /*[[${chartLabelsJson}]]*/ '[]';
+            var generated = /*[[${chartGeneratedJson}]]*/ '[]';
+            var recycled = /*[[${chartRecycledJson}]]*/ '[]';
+
+            var labelsArr = JSON.parse(labels);
+            var generatedArr = JSON.parse(generated);
+            var recycledArr = JSON.parse(recycled);
+
+            // Last point is always the "predicted" point — style differently
+            var lastIdx = labelsArr.length - 1;
+
+            var pointStyles = labelsArr.map(function (_, i) { return i === lastIdx ? 'triangle' : 'circle'; });
+            var pointRadius = labelsArr.map(function (_, i) { return i === lastIdx ? 8 : 4; });
+            var pointColors = labelsArr.map(function (_, i) { return i === lastIdx ? '#ff6b35' : '#e74c3c'; });
+            var pointColorsR = labelsArr.map(function (_, i) { return i === lastIdx ? '#ff6b35' : '#27ae60'; });
+
+            var ctx = document.getElementById('predictionChart');
+            if (!ctx) return;
+
+            new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labelsArr,
+                    datasets: [
+                        {
+                            label: 'Plastic Generated (kg)',
+                            data: generatedArr,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231,76,60,0.08)',
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.35,
+                            pointStyle: pointStyles,
+                            pointRadius: pointRadius,
+                            pointBackgroundColor: pointColors
+                        },
+                        {
+                            label: 'Plastic Recycled (kg)',
+                            data: recycledArr,
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39,174,96,0.08)',
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.35,
+                            pointStyle: pointStyles,
+                            pointRadius: pointRadius,
+                            pointBackgroundColor: pointColorsR
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    var suffix = ctx.dataIndex === lastIdx ? ' (Predicted)' : '';
+                                    return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' kg' + suffix;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(0,0,0,0.05)' } },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: { callback: function (v) { return v + ' kg'; } }
+                        }
+                    }
+                }
+            });
+        })();
+        /*]]>*/
+    </script>
+</body>
+
+</html>

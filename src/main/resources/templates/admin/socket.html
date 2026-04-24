@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Socket Alert Panel | PlasticAudit Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand"><span class="nav-icon">♻️</span><span class="nav-title">PlasticAudit</span><span
+                class="nav-sdg">SDG 12 &amp; 14</span></div>
+        <ul class="nav-links">
+            <li><a th:href="@{/dashboard}">Dashboard</a></li>
+            <li><a th:href="@{/waste/list}">Waste Entries</a></li>
+            <li><a th:href="@{/reports}">Reports</a></li>
+            <li><a th:href="@{/admin/industries}">Admin</a></li>
+            <li><a th:href="@{/admin/socket}" class="active">🔌 Socket</a></li>
+        </ul>
+        <div class="nav-user">
+            <span class="user-badge">ADMIN</span>
+            <span sec:authentication="name"></span>
+            <a th:href="@{/logout}" class="btn-logout">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div th:if="${successMsg}" class="alert alert-success" th:text="${successMsg}"></div>
+        <div th:if="${socketResponse}" class="alert alert-info">
+            <strong>📡 Socket Response:</strong>
+            <pre th:text="${socketResponse}"></pre>
+        </div>
+
+        <div class="admin-subnav">
+            <a th:href="@{/admin/users}" class="admin-tab">👤 Users</a>
+            <a th:href="@{/admin/industries}" class="admin-tab">🏭 Industries</a>
+            <a th:href="@{/admin/socket}" class="admin-tab active">🔌 Socket Panel</a>
+        </div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">🔌 Real-Time Alert Socket Panel</h1>
+                <p class="page-subtitle">CO4 — Java ServerSocket on port 9090. Broadcast compliance alerts to connected
+                    regulators.</p>
+            </div>
+        </div>
+
+        <!-- CO4 Technical Info -->
+        <div class="info-card">
+            <h3>⚙️ Socket Architecture (CO4)</h3>
+            <ul class="info-list">
+                <li><strong>AlertServer</strong>: <code>ServerSocket</code> on port <strong>9090</strong>, runs in a
+                    daemon thread on startup via <code>@PostConstruct</code>.</li>
+                <li><strong>AlertClient</strong>: <code>Socket</code> client connects, sends a command, receives ACK.
+                </li>
+                <li><strong>Multithreaded</strong>: Each client connection is handled in a separate thread via
+                    <code>ExecutorService (CachedThreadPool)</code>.</li>
+                <li><strong>Broadcast</strong>: All connected clients (regulators) receive the alert simultaneously
+                    using <code>CopyOnWriteArrayList&lt;PrintWriter&gt;</code>.</li>
+                <li><strong>Integration</strong>: Automatically called by <code>ReportAggregatorService</code> after
+                    async report generation completes.</li>
+            </ul>
+            <div class="socket-status">
+                <span class="socket-dot" id="socketDot"></span>
+                <span>Connected Clients: <strong th:text="${connectedClients}">0</strong></span>
+            </div>
+        </div>
+
+        <div class="form-row-cards">
+            <!-- Broadcast Alert -->
+            <div class="form-card half">
+                <h2 class="form-card-title">📢 Broadcast Alert to All Clients</h2>
+                <form th:action="@{/admin/socket/broadcast}" method="post" id="broadcastForm">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <div class="form-group">
+                        <label for="broadcastMessage">Alert Message</label>
+                        <textarea id="broadcastMessage" name="message" class="form-control" rows="3"
+                            placeholder="Enter compliance alert message...">Compliance deadline reminder: Submit Q1 plastic waste report within 48 hours.</textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="broadcastBtn">📢 Broadcast Now</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Test Client -->
+            <div class="form-card half">
+                <h2 class="form-card-title">🧪 Test AlertClient (CO4)</h2>
+                <p class="form-helper">Simulates a regulator client connecting via <code>Socket</code> to port 9090 and
+                    sending a command.</p>
+                <form th:action="@{/admin/socket/test-client}" method="post" id="clientTestForm">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <div class="form-group">
+                        <label for="clientCommand">Command to Send</label>
+                        <input type="text" id="clientCommand" name="command" class="form-control" value="STATUS_CHECK"
+                            placeholder="e.g. STATUS_CHECK" />
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-secondary" id="testClientBtn">🔌 Connect &amp;
+                            Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    <footer class="footer">
+        <p>♻️ PlasticAudit — SDG 12 &amp; 14 | Socket Port 9090</p>
+    </footer>
+    <script th:src="@{/js/app.js}"></script>
+</body>
+
+</html>
