@@ -1,4 +1,4 @@
-# ♻️ Plastic Waste Audit & Reduction Tracker
+♻️ Plastic Waste Audit & Reduction Tracker
 
 > **Enterprise Java Web Application** | Spring Boot 3.x | Hibernate 6.x | MySQL | SDG 12 & 14
 
