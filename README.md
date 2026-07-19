@@ -10,6 +10,7 @@
 
 ---
 
+
 ## 📌 Project Overview
 
 The **Plastic Waste Audit & Reduction Tracker** is a full-stack enterprise Java web application where industries log their plastic waste (generated, recycled, eliminated). A **multithreaded report aggregator** compiles the data for regulator audits.
